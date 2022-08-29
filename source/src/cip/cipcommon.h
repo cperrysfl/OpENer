@@ -147,10 +147,12 @@ EipStatus SetAttributeList(CipInstance *instance,
 /** @brief Decodes padded EPath
  *  @param epath EPath object to the receiving element
  *  @param message pointer to the message to decode
+ *  @param message_length length of the message
  *  @return Number of decoded bytes
  */
 int DecodePaddedEPath(CipEpath *epath,
-                      const EipUint8 **message);
+                      const EipUint8 **message,
+                      EipInt16 message_length);
 
 /** @brief Generic implementation of the CIP Create service
  *

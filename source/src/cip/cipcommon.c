@@ -1247,12 +1247,24 @@ void EncodeEPath(const CipEpath *const epath,
 }
 
 int DecodePaddedEPath(CipEpath *epath,
-                      const EipUint8 **message) {
+                      const EipUint8 **message,
+                      EipInt16 message_length) {
   unsigned int number_of_decoded_elements = 0;
   const EipUint8 *message_runner = *message;
 
+  if (message_length < 1) {
+    return kEipStatusError;
+  }
+
   epath->path_size = *message_runner;
   message_runner++;
+  message_length--;
+
+  /* path_size is in 16 bit chunks while message_length is in bytes. */
+  if (message_length < (2 * epath->path_size)) {
+    return kEipStatusError;
+  }
+
   /* copy path to structure, in version 0.1 only 8 bit for Class,Instance and Attribute, need to be replaced with function */
   epath->class_id = 0;
   epath->instance_number = 0;

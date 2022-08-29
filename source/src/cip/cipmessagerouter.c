@@ -250,7 +250,7 @@ CipError CreateMessageRouterRequestStructure(const EipUint8 *data,
   data_length--;
 
   int number_of_decoded_bytes =
-    DecodePaddedEPath(&(message_router_request->request_path), &data);
+    DecodePaddedEPath(&(message_router_request->request_path), &data, data_length);
   if(number_of_decoded_bytes < 0) {
     return kCipErrorPathSegmentError;
   }
