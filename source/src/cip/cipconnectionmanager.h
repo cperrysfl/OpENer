@@ -228,4 +228,17 @@ void CheckForTimedOutConnectionsAndCloseTCPConnections(
   const CipConnectionObject *const connection_object,
   CloseSessionFunction CloseSessions);
 
+/** @brief Compare the electronic key received with a forward open request with the device's data.
+ *
+ * @param key_format format identifier given in the forward open request
+ * @param key_data pointer to the electronic key data received in the forward open request
+ * @param extended_status the extended error code in case an error happened
+ * @return general status on the establishment
+ *    - EIP_OK ... on success
+ *    - On an error the general status code to be put into the response
+ */
+EipStatus CheckElectronicKeyData(EipUint8 key_format,
+                                 void *key_data,
+                                 EipUint16 *extended_status);
+
 #endif /* OPENER_CIPCONNECTIONMANAGER_H_ */
