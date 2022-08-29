@@ -42,11 +42,13 @@ EipStatus RegisterCipClass(CipClass *cip_class);
  * @param data pointer to the message data received
  * @param data_length number of bytes in the message
  * @param message_router_request pointer to structure of MRRequest data item.
+ * @param extended_status additional error status.
  * @return kEipStatusOk on success. otherwise kEipStatusError
  */
 CipError CreateMessageRouterRequestStructure(const EipUint8 *data,
                                              EipInt16 data_length,
-                                             CipMessageRouterRequest *message_router_request);
+                                             CipMessageRouterRequest *message_router_request,
+                                             EipUint16 *extended_status);
 
 void InitializeCipMessageRouterClass(CipClass *cip_class) {
 
@@ -181,16 +183,22 @@ EipStatus NotifyMessageRouter(EipUint8 *data,
                               const int encapsulation_session) {
   EipStatus eip_status = kEipStatusOkSend;
   CipError status = kCipErrorSuccess;
+  EipUint16 extended_status = 0;
 
   OPENER_TRACE_INFO("NotifyMessageRouter: routing unconnected message\n");
   if(kCipErrorSuccess !=
      (status =
         CreateMessageRouterRequestStructure(data, data_length,
-                                            &g_message_router_request) ) ) {                                             /* error from create MR structure*/
+                                            &g_message_router_request,
+                                            &extended_status) ) ) {                                             /* error from create MR structure*/
     OPENER_TRACE_ERR(
       "NotifyMessageRouter: error from createMRRequeststructure\n");
     message_router_response->general_status = status;
     message_router_response->size_of_additional_status = 0;
+    if (extended_status != 0) {
+      message_router_response->size_of_additional_status = 1;
+      message_router_response->additional_status[0] = extended_status;
+    }
     message_router_response->reserved = 0;
     message_router_response->reply_service =
       (0x80 | g_message_router_request.service);
@@ -242,17 +250,23 @@ EipStatus NotifyMessageRouter(EipUint8 *data,
 
 CipError CreateMessageRouterRequestStructure(const EipUint8 *data,
                                              EipInt16 data_length,
-                                             CipMessageRouterRequest *message_router_request)
+                                             CipMessageRouterRequest *message_router_request,
+                                             EipUint16 *extended_status)
 {
+  CipError status = kCipErrorSuccess;
 
   message_router_request->service = *data;
   data++;
   data_length--;
 
   int number_of_decoded_bytes =
-    DecodePaddedEPath(&(message_router_request->request_path), &data, data_length);
+    DecodePaddedEPath(&(message_router_request->request_path),
+                      &data,
+                      data_length,
+                      &status,
+                      extended_status);
   if(number_of_decoded_bytes < 0) {
-    return kCipErrorPathSegmentError;
+    return status;
   }
 
   message_router_request->data = data;

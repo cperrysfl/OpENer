@@ -1248,11 +1248,14 @@ void EncodeEPath(const CipEpath *const epath,
 
 int DecodePaddedEPath(CipEpath *epath,
                       const EipUint8 **message,
-                      EipInt16 message_length) {
+                      EipInt16 message_length,
+                      CipError *status,
+                      EipUint16 *extended_status) {
   unsigned int number_of_decoded_elements = 0;
   const EipUint8 *message_runner = *message;
 
   if (message_length < 1) {
+    *status = kCipErrorPathSegmentError;
     return kEipStatusError;
   }
 
@@ -1262,6 +1265,7 @@ int DecodePaddedEPath(CipEpath *epath,
 
   /* path_size is in 16 bit chunks while message_length is in bytes. */
   if (message_length < (2 * epath->path_size)) {
+    *status = kCipErrorPathSegmentError;
     return kEipStatusError;
   }
 
@@ -1273,6 +1277,7 @@ int DecodePaddedEPath(CipEpath *epath,
   while(number_of_decoded_elements < epath->path_size) {
     if( kSegmentTypeReserved == ( (*message_runner) & kSegmentTypeReserved ) ) {
       /* If invalid/reserved segment type, segment type greater than 0xE0 */
+      *status = kCipErrorPathSegmentError;
       return kEipStatusError;
     }
 
@@ -1327,8 +1332,30 @@ int DecodePaddedEPath(CipEpath *epath,
         number_of_decoded_elements++;
         break;
 
+      case SEGMENT_TYPE_LOGICAL_SEGMENT + LOGICAL_SEGMENT_TYPE_SPECIAL +
+        LOGICAL_SEGMENT_SPECIAL_TYPE_FORMAT_ELECTRONIC_KEY: // 0x34
+        {
+          EipUint8 key_format = *(EipUint8 *) (message_runner + 1);
+          EipUint8 *key_data = (EipUint8 *) (message_runner + 2);
+
+          if (4 != key_format) {
+            *status = kCipErrorPathSegmentError;
+            return kEipStatusError;
+          }
+
+          EipStatus err = CheckElectronicKeyData(key_format, key_data, extended_status);
+          if (err != kEipStatusOk) {
+            *status = kCipErrorKeyFailureInPath;
+            return kEipStatusError;
+          }
+        }
+        message_runner += 10;
+        number_of_decoded_elements += 4;
+        break;
+
       default:
         OPENER_TRACE_ERR("wrong path requested\n");
+        *status = kCipErrorPathSegmentError;
         return kEipStatusError;
     }
   }

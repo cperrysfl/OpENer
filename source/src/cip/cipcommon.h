@@ -12,6 +12,7 @@
 
 #include "typedefs.h"
 #include "ciptypes.h"
+#include "ciperror.h"
 
 static const EipUint16 kCipUintZero = 0; /**< Zero value for returning the UINT standard value */
 
@@ -148,11 +149,15 @@ EipStatus SetAttributeList(CipInstance *instance,
  *  @param epath EPath object to the receiving element
  *  @param message pointer to the message to decode
  *  @param message_length length of the message
+ *  @param status error code
+ *  @param extended_status extended error code
  *  @return Number of decoded bytes
  */
 int DecodePaddedEPath(CipEpath *epath,
                       const EipUint8 **message,
-                      EipInt16 message_length);
+                      EipInt16 message_length,
+                      CipError *status,
+                      EipUint16 *extended_status);
 
 /** @brief Generic implementation of the CIP Create service
  *
